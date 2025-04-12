@@ -1,108 +1,90 @@
 package com.example.assignment4.dogs;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * DogController.java.
- * Includes all REST API endpoint mappings for the Dog object.
- */
-@RestController
+@Controller
 @RequestMapping("/dogs")
 public class DogController {
 
     @Autowired
     private DogService service;
 
-    /**
-     * Get a list of all Dogs in the database.
-     * http://localhost:8080/dogs/all
-     *
-     * @return a list of Dog objects.
-     */
+    //  View all dogs
     @GetMapping("/all")
-    public ResponseEntity<List<Dog>> getAllDogs() {
-        return new ResponseEntity<>(service.getAllDogs(), HttpStatus.OK);
+    public String getAllDogs(Model model) {
+        List<Dog> dogs = service.getAllDogs();
+        model.addAttribute("dogs", dogs);
+        model.addAttribute("title", "All Dogs");
+        return "animal-list";
     }
 
-    /**
-     * Get a specific Dog by Id.
-     * http://localhost:8080/dogs/{dogId}
-     *
-     * @param dogId the unique Id for a Dog.
-     * @return One Dog object.
-     */
+    //  View a single dog by ID
     @GetMapping("/{dogId}")
-    public ResponseEntity<Dog> getDogById(@PathVariable int dogId) {
-        return new ResponseEntity<>(service.getDogById(dogId), HttpStatus.OK);
+    public String getDogById(@PathVariable int dogId, Model model) {
+        Dog dog = service.getDogById(dogId);
+        model.addAttribute("dog", dog);
+        model.addAttribute("title", "Dog Details");
+        return "animal-details";
     }
 
-    /**
-     * Get all dogs of a given breed.
-     * http://localhost:8080/dogs/breed/{breed}
-     *
-     * @param breed the breed of the Dog.
-     * @return a list of Dog objects matching the breed.
-     */
-    @GetMapping("/breed/{breed}")
-    public ResponseEntity<List<Dog>> getDogsByBreed(@PathVariable String breed) {
-        return new ResponseEntity<>(service.getDogsByBreed(breed), HttpStatus.OK);
-    }
-
-    /**
-     * Get animals whose name contains a string.
-     * http://localhost:8080/dogs/name?search={substring}
-     *
-     * @param search the search string for dog names.
-     * @return a list of Dog objects whose names contain the given string.
-     */
+    //  Search dogs by name
     @GetMapping("/name")
-    public ResponseEntity<List<Dog>> getDogsByName(@RequestParam(name = "search", defaultValue = "") String search) {
-        return new ResponseEntity<>(service.getDogsByName(search), HttpStatus.OK);
+    public String getDogsByName(@RequestParam(name = "search", defaultValue = "") String search, Model model) {
+        List<Dog> dogs = service.getDogsByName(search);
+        model.addAttribute("dogs", dogs);
+        model.addAttribute("title", "Search Results");
+        return "animal-list";
     }
 
-    /**
-     * Add a new Dog entry.
-     * http://localhost:8080/dogs/new
-     *
-     * @param dog the new Dog object.
-     * @return the updated list of Dogs.
-     */
-    @PostMapping("/new")
-    public ResponseEntity<List<Dog>> addNewDog(@RequestBody Dog dog) {
+    //  Filter dogs by breed
+    @GetMapping("/breed/{breed}")
+    public String getDogsByBreed(@PathVariable String breed, Model model) {
+        List<Dog> dogs = service.getDogsByBreed(breed);
+        model.addAttribute("dogs", dogs);
+        model.addAttribute("title", "Breed: " + breed);
+        return "animal-list";
+    }
+
+    //  Show Create Dog form
+    @GetMapping("/create-form")
+    public String showCreateForm(Model model) {
+        model.addAttribute("dog", new Dog());
+        model.addAttribute("title", "Create New Dog");
+        return "animal-create";
+    }
+
+    //  Handle Create Dog form
+    @PostMapping("/create-form")
+    public String handleCreateForm(@ModelAttribute Dog dog) {
         service.addNewDog(dog);
-        return new ResponseEntity<>(service.getAllDogs(), HttpStatus.CREATED);
+        return "redirect:/dogs/all";
     }
 
-    /**
-     * Update an existing Dog object.
-     * http://localhost:8080/dogs/update/{dogId}
-     *
-     * @param dogId the unique Dog Id.
-     * @param dog   the new updated Dog details.
-     * @return the updated Dog object.
-     */
-    @PutMapping("/update/{dogId}")
-    public ResponseEntity<Dog> updateDog(@PathVariable int dogId, @RequestBody Dog dog) {
+    //  Show Update Dog form
+    @GetMapping("/update-form/{dogId}")
+    public String showUpdateForm(@PathVariable int dogId, Model model) {
+        Dog dog = service.getDogById(dogId);
+        model.addAttribute("dog", dog);
+        model.addAttribute("title", "Update Dog");
+        return "animal-update";
+    }
+
+    //  Handle Update Dog form
+    @PostMapping("/update-form/{dogId}")
+    public String handleUpdateForm(@PathVariable int dogId, @ModelAttribute Dog dog) {
         service.updateDog(dogId, dog);
-        return new ResponseEntity<>(service.getDogById(dogId), HttpStatus.OK);
+        return "redirect:/dogs/" + dogId;
     }
 
-    /**
-     * Delete a Dog object.
-     * http://localhost:8080/dogs/delete/{dogId}
-     *
-     * @param dogId the unique Dog Id.
-     * @return the updated list of Dogs.
-     */
-    @DeleteMapping("/delete/{dogId}")
-    public ResponseEntity<List<Dog>> deleteDogById(@PathVariable int dogId) {
+    //  Handle Delete using GET
+    @GetMapping("/delete/{dogId}")
+    public String deleteDog(@PathVariable int dogId) {
         service.deleteDogById(dogId);
-        return new ResponseEntity<>(service.getAllDogs(), HttpStatus.OK);
+        return "redirect:/dogs/all";
     }
 }
-
